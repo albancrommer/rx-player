@@ -77,7 +77,7 @@ import {
 import features from "../../features";
 import Manifest, {
   Adaptation,
-  Period,
+  IFetchedPeriod,
   Representation,
 } from "../../manifest";
 import { IBifThumbnail } from "../../parsers/images/bif";
@@ -358,7 +358,7 @@ class Player extends EventEmitter<PLAYER_EVENT_STRINGS, any> {
      * null if no Period is being played.
      * @type {Object}
      */
-    currentPeriod : Period|null;
+    currentPeriod : IFetchedPeriod|null;
 
     /**
      * Store currently considered adaptations, per active period.
@@ -443,7 +443,7 @@ class Player extends EventEmitter<PLAYER_EVENT_STRINGS, any> {
    * @type {Object}
    */
   private _priv_contentEventsMemory : {
-    period: null|Period; // current Period
+    period: null|IFetchedPeriod; // current Period
     audioTrack: null|ITMAudioTrack; // audioTrack for the current Period
     textTrack: null|ITMTextTrack; // textTrack for the current Period
     videoTrack: null|ITMVideoTrack; // videoTrack for the current Period
@@ -1836,7 +1836,7 @@ class Player extends EventEmitter<PLAYER_EVENT_STRINGS, any> {
   ) : void;
   private _priv_triggerContentEvent(
     type : "period",
-    value : Period
+    value : IFetchedPeriod
   ) : void;
   private _priv_triggerContentEvent(
     type : "bitrateEstimation",
@@ -1855,7 +1855,14 @@ class Player extends EventEmitter<PLAYER_EVENT_STRINGS, any> {
       "videoBitrate" |
       "audioBitrate" |
       "bitrateEstimation",
-    value : ITMVideoTrack|ITMAudioTrack|ITMTextTrack|Period|IBitrateEstimate|number|null
+    value :
+      ITMVideoTrack |
+      ITMAudioTrack |
+      ITMTextTrack |
+      IFetchedPeriod |
+      IBitrateEstimate |
+      number |
+      null
   ) : void {
     const prev = this._priv_contentEventsMemory[type];
     if (!deepEqual(prev, value)) {
@@ -2014,7 +2021,7 @@ class Player extends EventEmitter<PLAYER_EVENT_STRINGS, any> {
    * @param {Object} value
    * @private
    */
-  private _priv_onActivePeriodChanged({ period } : { period : Period }) : void {
+  private _priv_onActivePeriodChanged({ period } : { period : IFetchedPeriod }) : void {
     if (!this._priv_contentInfos) {
       log.error("API: The active period changed but no content is loaded");
       return;
@@ -2062,7 +2069,7 @@ class Player extends EventEmitter<PLAYER_EVENT_STRINGS, any> {
    */
   private _priv_onPeriodBufferReady(value : {
     type : IBufferType;
-    period : Period;
+    period : IFetchedPeriod;
     adaptation$ : Subject<Adaptation|null>;
   }) : void {
     const { type, period, adaptation$ } = value;
@@ -2117,7 +2124,7 @@ class Player extends EventEmitter<PLAYER_EVENT_STRINGS, any> {
    */
   private _priv_onPeriodBufferCleared(value : {
     type : IBufferType;
-    period : Period;
+    period : IFetchedPeriod;
   }) : void {
     const { type, period } = value;
 
@@ -2169,7 +2176,7 @@ class Player extends EventEmitter<PLAYER_EVENT_STRINGS, any> {
   } : {
     type : IBufferType;
     adaptation : Adaptation|null;
-    period : Period;
+    period : IFetchedPeriod;
   }) : void {
     if (!this._priv_contentInfos) {
       log.error("API: The adaptations changed but no content is loaded");
@@ -2225,7 +2232,7 @@ class Player extends EventEmitter<PLAYER_EVENT_STRINGS, any> {
     representation,
   }: {
     type : IBufferType;
-    period : Period;
+    period : IFetchedPeriod;
     representation : Representation|null;
   }) : void {
     if (!this._priv_contentInfos) {
