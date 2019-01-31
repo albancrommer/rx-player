@@ -25,9 +25,13 @@ import {
   of as observableOf,
 } from "rxjs";
 import {
+  filter,
   ignoreElements,
   map,
   mergeMap,
+  mergeMapTo,
+  shareReplay,
+  take,
 } from "rxjs/operators";
 import {
   clearElementSrc,
@@ -142,7 +146,9 @@ export default function initializeDirectfileContent({
 
   // Create EME Manager, an observable which will manage every EME-related
   // issue.
-  const emeManager$ = createEMEManager(mediaElement, keySystems);
+  const emeManager$ = createEMEManager(mediaElement, keySystems).pipe(
+    shareReplay({ refCount: true })
+  );
 
   // Translate errors coming from the media element into RxPlayer errors
   // through a throwing Observable.
@@ -160,8 +166,11 @@ export default function initializeDirectfileContent({
     .pipe(map(EVENTS.stalled));
 
   // Manage "loaded" event and warn if autoplay is blocked on the current browser
-  const loadedEvent$ = load$
-    .pipe(mergeMap((evt) => {
+  const loadedEvent$ = emeManager$.pipe(
+    filter(({ type }) => type === "eme-init" || type === "eme-disabled"),
+    take(1),
+    mergeMapTo(load$),
+    mergeMap((evt) => {
       if (evt === "autoplay-blocked") {
         const error = new MediaError("MEDIA_ERR_BLOCKED_AUTOPLAY", null, false);
         return observableOf(EVENTS.warning(error), EVENTS.loaded());
