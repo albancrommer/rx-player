@@ -41,8 +41,11 @@ import {
   MediaError,
 } from "../../errors";
 import log from "../../log";
-import { IKeySystemOption } from "../eme";
-import createEMEManager from "./create_eme_manager";
+import {
+  IEMEManagerEvent,
+  IKeySystemOption,
+} from "../eme";
+import createEMEManager, { IEMEDisabledEvent } from "./create_eme_manager";
 import EVENTS from "./events_generators";
 import { IInitialTimeOptions } from "./get_initial_time";
 import getStalledEvents from "./get_stalled_events";
@@ -118,7 +121,9 @@ export type IDirectfileEvent =
   ISpeedChangedEvent |
   IStalledEvent |
   ILoadedEvent |
-  IWarningEvent;
+  IWarningEvent |
+  IEMEManagerEvent |
+  IEMEDisabledEvent;
 
 /**
  * Launch a content in "Directfile mode".
@@ -136,6 +141,9 @@ export default function initializeDirectfileContent({
 } : IDirectFileOptions) : Observable<IDirectfileEvent> {
   clearElementSrc(mediaElement);
 
+  // Start everything! (Just put the URL in the element's src).
+  const linkURL$ = setElementSrc$(mediaElement, url).pipe(take(1));
+
   log.debug("Init: Calculating initial time");
   const initialTime = () =>
     getDirectFileInitialTime(mediaElement, startAt);
@@ -146,7 +154,8 @@ export default function initializeDirectfileContent({
 
   // Create EME Manager, an observable which will manage every EME-related
   // issue.
-  const emeManager$ = createEMEManager(mediaElement, keySystems).pipe(
+  const emeManager$ = linkURL$.pipe(
+    mergeMap(() => createEMEManager(mediaElement, keySystems)),
     shareReplay({ refCount: true })
   );
 
@@ -181,9 +190,6 @@ export default function initializeDirectfileContent({
       return observableOf(EVENTS.loaded());
     }));
 
-  // Start everything! (Just put the URL in the element's src).
-  const linkURL$ = setElementSrc$(mediaElement, url).pipe(ignoreElements());
-
   const initialSeek$ = seek$.pipe(ignoreElements());
 
   return observableMerge(
@@ -192,7 +198,6 @@ export default function initializeDirectfileContent({
     emeManager$,
     mediaError$,
     playbackRate$,
-    stalled$,
-    linkURL$
+    stalled$
   );
 }
