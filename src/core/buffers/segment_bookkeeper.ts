@@ -39,11 +39,11 @@ interface IBufferedSegmentInfos {
 }
 
 interface IBufferedSegment {
-  bufferedEnd : number|undefined;
-  bufferedStart : number|undefined;
-  end : number;
-  infos : IBufferedSegmentInfos;
-  start : number;
+  bufferedEnd : number|undefined; // Last inferred end in the SourceBuffer
+  bufferedStart : number|undefined; // Last inferred start in the SourceBuffer
+  end : number; // Supposed end the segment should reach
+  infos : IBufferedSegmentInfos; // Informations on what this segment is
+  start : number; // Supposed start the segment should start from
 }
 
 /**
@@ -83,13 +83,13 @@ export default class SegmentBookkeeper {
      * Current inventory index considered.
      * @type {Number}
      */
-    let inventoryIndex = 0;
+    let inventoryIndex : number = 0;
 
     /**
      * Current segmentInfos considered
      * @type {Object}
      */
-    let thisSegment = inventory[0];
+    let thisSegment : IBufferedSegment = inventory[0];
 
     const rangesLength = ranges.length;
     for (let i = 0; i < rangesLength; i++) {
@@ -138,7 +138,7 @@ export default class SegmentBookkeeper {
        * -1 if no segment have been garbage-collected before thisSegment.
        * @type {Number}
        */
-      let lastDeletedSegmentEnd = -1;
+      let lastDeletedSegmentEnd : number = -1;
 
       // remove garbage-collected segments
       // (not in that TimeRange nor in the previous one)
